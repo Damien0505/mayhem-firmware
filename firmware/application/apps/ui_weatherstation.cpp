@@ -256,6 +256,8 @@ const char* WeatherView::getWeatherSensorTypeName(FPROTO_WEATHER_SENSOR type) {
             return "Bresser3CH";
         case FPW_Vauno_EN8822:
             return "Vauno EN8822";
+        case FPW_FineOffsetWH2:
+            return "FineOffset WH2";
         case FPW_Invalid:
         default:
             return "Unknown";
@@ -632,6 +634,17 @@ WeatherRecentEntry WeatherView::process_data(const WeatherDataMessage* data) {
             ret.temp = (float)i16 / 10.0;
             ret.humidity = (data->decode_data >> 11) & 0x7f;
 
+            break;
+        case FPW_FineOffsetWH2:
+            ret.id = (data->decode_data >> 28) & 0xFF;
+            ret.battery_low = !((data->decode_data >> 27) & 1);
+            ret.channel = ((data->decode_data >> 25) & 0x03) + 1;
+            if (!((data->decode_data >> 24) & 1)) {
+                ret.temp = (float)((data->decode_data >> 12) & 0x0FFF) / 10.0f;
+            } else {
+                ret.temp = (float)((~(data->decode_data >> 12) & 0x0FFF) + 1) / -10.0f;
+            }
+            ret.humidity = (data->decode_data >> 4) & 0xFF;
             break;
         case FPW_Invalid:
         default:
